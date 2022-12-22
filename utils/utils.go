@@ -11,7 +11,6 @@ import (
 	"github.com/ava-labs/ava-sim/constants"
 
 	"github.com/ava-labs/avalanchego/ids"
-	avalancheContants "github.com/ava-labs/avalanchego/utils/constants"
 	"github.com/ava-labs/avalanchego/utils/hashing"
 )
 
@@ -47,10 +46,10 @@ func LoadNodeID(stakeCert []byte) (string, error) {
 		return "", fmt.Errorf("%w: problem parsing staking certificate", err)
 	}
 
-	id, err := ids.ToShortID(hashing.PubkeyBytesToAddress(cert.Raw))
+	id, err := ids.ToNodeID(hashing.PubkeyBytesToAddress(cert.Raw))
 	if err != nil {
 		return "", fmt.Errorf("%w: problem deriving staker ID from certificate", err)
 	}
 
-	return id.PrefixedString(avalancheContants.NodeIDPrefix), nil
+	return id.String(), nil
 }

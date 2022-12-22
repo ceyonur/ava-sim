@@ -22,9 +22,6 @@ func createNodeConfig(pluginDir string, args []string) (node.Config, error) {
 
 // Flags represents available CLI flags when starting a node
 type Flags struct {
-	// Assertions
-	AssertionsEnabled bool
-
 	// Version
 	Version bool
 
@@ -38,9 +35,6 @@ type Flags struct {
 
 	// Network ID
 	NetworkID string
-
-	// Crypto
-	SignatureVerificationEnabled bool
 
 	// APIs
 	APIAdminEnabled    bool
@@ -73,22 +67,6 @@ type Flags struct {
 	LogDir              string
 	LogDisplayLevel     string
 	LogDisplayHighlight string
-
-	// Consensus
-	SnowAvalancheBatchSize      int
-	SnowAvalancheNumParents     int
-	SnowSampleSize              int
-	SnowQuorumSize              int
-	SnowVirtuousCommitThreshold int
-	SnowRogueCommitThreshold    int
-	SnowConcurrentRepolls       int
-	MinDelegatorStake           int
-	ConsensusShutdownTimeout    string
-	ConsensusGossipFrequency    string
-	MinDelegationFee            int
-	MinValidatorStake           int
-	MaxStakeDuration            string
-	MaxValidatorStake           int
 
 	// Staking
 	StakingEnabled        bool
@@ -161,14 +139,12 @@ type Flags struct {
 // defaultFlags returns Avash-specific default node flags
 func defaultFlags() Flags {
 	return Flags{
-		AssertionsEnabled:                       true,
 		Version:                                 false,
 		TxFee:                                   1000000,
 		PublicIP:                                "127.0.0.1",
 		DynamicUpdateDuration:                   "5m",
 		DynamicPublicIP:                         "",
 		NetworkID:                               "local",
-		SignatureVerificationEnabled:            true,
 		APIAdminEnabled:                         true,
 		APIIPCsEnabled:                          true,
 		APIKeystoreEnabled:                      true,
@@ -185,20 +161,6 @@ func defaultFlags() Flags {
 		LogLevel:                                "info",
 		LogDisplayLevel:                         "", // defaults to the value provided to --log-level
 		LogDisplayHighlight:                     "colors",
-		SnowAvalancheBatchSize:                  30,
-		SnowAvalancheNumParents:                 5,
-		SnowSampleSize:                          2,
-		SnowQuorumSize:                          2,
-		SnowVirtuousCommitThreshold:             5,
-		SnowRogueCommitThreshold:                10,
-		SnowConcurrentRepolls:                   4,
-		MinDelegatorStake:                       5000000,
-		ConsensusShutdownTimeout:                "5s",
-		ConsensusGossipFrequency:                "10s",
-		MinDelegationFee:                        20000,
-		MinValidatorStake:                       5000000,
-		MaxStakeDuration:                        "8760h",
-		MaxValidatorStake:                       3000000000000000,
 		StakeMintingPeriod:                      "8760h",
 		NetworkInitialTimeout:                   "5s",
 		NetworkMinimumTimeout:                   "5s",
@@ -238,7 +200,7 @@ func defaultFlags() Flags {
 		HealthCheckFreqKey:                      "30s",
 		RouterHealthMaxOutstandingRequestsKey:   1024,
 		RouterHealthMaxDropRateKey:              1,
-		IndexEnabled:                            false,
+		IndexEnabled:                            true,
 		PluginModeEnabled:                       false,
 	}
 }
@@ -274,14 +236,11 @@ func flagsToArgs(flags Flags) []string {
 	fmt.Println(stakerKeyFile, stakerCertFile)
 
 	args := []string{
-		"--assertions-enabled=" + strconv.FormatBool(flags.AssertionsEnabled),
 		"--version=" + strconv.FormatBool(flags.Version),
 		"--tx-fee=" + strconv.FormatUint(uint64(flags.TxFee), 10),
 		"--public-ip=" + flags.PublicIP,
-		"--dynamic-update-duration=" + flags.DynamicUpdateDuration,
 		"--dynamic-public-ip=" + flags.DynamicPublicIP,
 		"--network-id=" + flags.NetworkID,
-		"--signature-verification-enabled=" + strconv.FormatBool(flags.SignatureVerificationEnabled),
 		"--api-admin-enabled=" + strconv.FormatBool(flags.APIAdminEnabled),
 		"--api-ipcs-enabled=" + strconv.FormatBool(flags.APIIPCsEnabled),
 		"--api-keystore-enabled=" + strconv.FormatBool(flags.APIKeystoreEnabled),
@@ -299,21 +258,6 @@ func flagsToArgs(flags Flags) []string {
 		"--log-level=" + flags.LogLevel,
 		"--log-dir=" + flags.LogDir,
 		"--log-display-level=" + flags.LogDisplayLevel,
-		"--log-display-highlight=" + flags.LogDisplayHighlight,
-		"--snow-avalanche-batch-size=" + strconv.Itoa(flags.SnowAvalancheBatchSize),
-		"--snow-avalanche-num-parents=" + strconv.Itoa(flags.SnowAvalancheNumParents),
-		"--snow-sample-size=" + strconv.Itoa(flags.SnowSampleSize),
-		"--snow-quorum-size=" + strconv.Itoa(flags.SnowQuorumSize),
-		"--snow-virtuous-commit-threshold=" + strconv.Itoa(flags.SnowVirtuousCommitThreshold),
-		"--snow-rogue-commit-threshold=" + strconv.Itoa(flags.SnowRogueCommitThreshold),
-		"--min-delegator-stake=" + strconv.Itoa(flags.MinDelegatorStake),
-		"--consensus-shutdown-timeout=" + flags.ConsensusShutdownTimeout,
-		"--consensus-gossip-frequency=" + flags.ConsensusGossipFrequency,
-		"--min-delegation-fee=" + strconv.Itoa(flags.MinDelegationFee),
-		"--min-validator-stake=" + strconv.Itoa(flags.MinValidatorStake),
-		"--max-stake-duration=" + flags.MaxStakeDuration,
-		"--max-validator-stake=" + strconv.Itoa(flags.MaxValidatorStake),
-		"--snow-concurrent-repolls=" + strconv.Itoa(flags.SnowConcurrentRepolls),
 		"--stake-minting-period=" + flags.StakeMintingPeriod,
 		"--network-initial-timeout=" + flags.NetworkInitialTimeout,
 		"--network-minimum-timeout=" + flags.NetworkMinimumTimeout,
@@ -325,9 +269,6 @@ func flagsToArgs(flags Flags) []string {
 		"--network-health-min-conn-peers=" + strconv.Itoa(flags.NetworkHealthMinConnPeers),
 		"--network-timeout-coefficient=" + strconv.Itoa(flags.NetworkTimeoutCoefficient),
 		"--network-timeout-halflife=" + flags.NetworkTimeoutHalflife,
-		"--network-peer-list-gossip-frequency=" + flags.NetworkPeerListGossipFrequency,
-		"--network-peer-list-gossip-size=" + strconv.Itoa(flags.NetworkPeerListGossipSize),
-		"--network-peer-list-size=" + strconv.Itoa(flags.NetworkPeerListSize),
 		"--staking-enabled=" + strconv.FormatBool(flags.StakingEnabled),
 		"--staking-port=" + stakingPortString,
 		"--staking-disabled-weight=" + strconv.Itoa(flags.StakingDisabledWeight),
@@ -343,11 +284,9 @@ func flagsToArgs(flags Flags) []string {
 		"--api-info-enabled=" + strconv.FormatBool(flags.APIInfoEnabled),
 		"--ipcs-chain-ids=" + flags.IPCSChainIDs,
 		"--ipcs-path=" + flags.IPCSPath,
-		"--fd-limit=" + strconv.Itoa(flags.FDLimit),
 		"--benchlist-duration=" + flags.BenchlistDuration,
 		"--benchlist-fail-threshold=" + strconv.Itoa(flags.BenchlistFailThreshold),
 		"--benchlist-min-failing-duration=" + flags.BenchlistMinFailingDuration,
-		"--benchlist-peer-summary-enabled=" + strconv.FormatBool(flags.BenchlistPeerSummaryEnabled),
 		fmt.Sprintf("--uptime-requirement=%f", flags.UptimeRequirement),
 		"--bootstrap-retry-enabled=" + strconv.FormatBool(flags.RetryBootstrap),
 		"--health-check-averager-halflife=" + flags.HealthCheckAveragerHalflifeKey,

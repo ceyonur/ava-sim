@@ -12,9 +12,9 @@ const (
 
 	HTTPTimeout  = 10 * time.Second
 	BaseHTTPPort = 9650
-	NumNodes     = 5
+	NumNodes     = 2
 
-	FilePerms = 0777
+	FilePerms = 0o777
 )
 
 var Chains = []string{"P", "C", "X"}

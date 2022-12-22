@@ -59,8 +59,8 @@ var (
 func NodeIDs() []string {
 	nodeCerts := [][]byte{keys1StakerCrt, keys2StakerCrt, keys3StakerCrt, keys4StakerCrt, keys5StakerCrt}
 	nodeIDs := make([]string, constants.NumNodes)
-	for i, cert := range nodeCerts {
-		id, err := utils.LoadNodeID(cert)
+	for i := 0; i < constants.NumNodes; i++ {
+		id, err := utils.LoadNodeID(nodeCerts[i])
 		if err != nil {
 			panic(err)
 		}
@@ -92,9 +92,7 @@ func StartNetwork(ctx context.Context, vmPath string, vmID ids.ID, bootstrapped 
 	if err := os.MkdirAll(pluginsDir, os.FileMode(constants.FilePerms)); err != nil {
 		panic(err)
 	}
-	if err := utils.CopyFile("build/system-plugins/evm", fmt.Sprintf("%s/evm", pluginsDir)); err != nil {
-		panic(err)
-	}
+
 	if len(vmPath) > 0 {
 		if err := utils.CopyFile(vmPath, fmt.Sprintf("%s/%s", pluginsDir, vmID.String())); err != nil {
 			panic(err)
@@ -130,11 +128,13 @@ func StartNetwork(ctx context.Context, vmPath string, vmID ids.ID, bootstrapped 
 			df.BootstrapIPs = ""
 			df.BootstrapIDs = ""
 		}
+
 		if len(vmPath) > 0 {
 			df.WhitelistedSubnets = constants.WhitelistedSubnets
 		}
 		df.StakingTLSCertFile = certFile
 		df.StakingTLSKeyFile = keyFile
+
 		nodeConfig, err := createNodeConfig(pluginsDir, flagsToArgs(df))
 		if err != nil {
 			panic(err)

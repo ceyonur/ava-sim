@@ -14,19 +14,21 @@ import (
 	"github.com/ava-labs/avalanchego/api/info"
 	"github.com/ava-labs/avalanchego/api/keystore"
 	"github.com/ava-labs/avalanchego/ids"
+	"github.com/ava-labs/avalanchego/utils/cb58"
+	"github.com/ava-labs/avalanchego/utils/crypto"
 	"github.com/ava-labs/avalanchego/vms/platformvm"
 	"github.com/ava-labs/avalanchego/vms/platformvm/status"
 	"github.com/fatih/color"
 )
 
 const (
-	genesisKey   = "PrivateKey-ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN"
+	ewoqKey      = "ewoqjP7PxY4yr3iLTpLisriqt94hdyDFNgchSxGGztUrTXtNN"
 	waitTime     = 1 * time.Second
 	longWaitTime = 10 * waitTime
 
 	validatorWeight    = 50
 	validatorStartDiff = 30 * time.Second
-	validatorEndDiff   = 30 * 24 * time.Hour // 30 days
+	validatorEndDiff   = 15 * 24 * time.Hour // 30 days
 )
 
 func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
@@ -40,11 +42,10 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 			Password: "vmsrkewl",
 		}
 	)
-
 	// Create user
 	kclient := keystore.NewClient(nodeURLs[0])
-	ok, err := kclient.CreateUser(ctx, userPass)
-	if !ok || err != nil {
+	err := kclient.CreateUser(ctx, userPass)
+	if err != nil {
 		return fmt.Errorf("could not create user: %w", err)
 	}
 
@@ -52,11 +53,24 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	client := platformvm.NewClient(nodeURLs[0])
 
 	// Import genesis key
-	fundedAddress, err := client.ImportKey(ctx, userPass, genesisKey)
+	ewoqBytes, err := cb58.Decode(ewoqKey)
+	if err != nil {
+		return err
+	}
+
+	factory := crypto.FactorySECP256K1R{}
+
+	ewoqIntf, err := factory.ToPrivateKey(ewoqBytes)
+	if err != nil {
+		return err
+	}
+
+	EWOQKey := ewoqIntf.(*crypto.PrivateKeySECP256K1R)
+	fundedAddress, err := client.ImportKey(ctx, userPass, EWOQKey)
 	if err != nil {
 		return fmt.Errorf("unable to import genesis key: %w", err)
 	}
-	balance, err := client.GetBalance(ctx, []string{fundedAddress})
+	balance, err := client.GetBalance(ctx, []ids.ShortID{fundedAddress})
 	if err != nil {
 		return fmt.Errorf("unable to get genesis key balance: %w", err)
 	}
@@ -65,9 +79,9 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	// Create a subnet
 	subnetIDTx, err := client.CreateSubnet(ctx,
 		userPass,
-		[]string{fundedAddress},
+		[]ids.ShortID{fundedAddress},
 		fundedAddress,
-		[]string{fundedAddress},
+		[]ids.ShortID{fundedAddress},
 		1,
 	)
 	if err != nil {
@@ -78,7 +92,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		txStatus, _ := client.GetTxStatus(ctx, subnetIDTx, true)
+		txStatus, _ := client.GetTxStatus(ctx, subnetIDTx)
 		if txStatus.Status == status.Committed {
 			break
 		}
@@ -99,10 +113,16 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	}
 
 	// Add all validators to subnet with equal weight
-	for _, nodeID := range manager.NodeIDs() {
+	for _, nodeIDStr := range manager.NodeIDs() {
+		nodeID, err := ids.NodeIDFromString(nodeIDStr)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
 		txID, err := client.AddSubnetValidator(ctx,
-			userPass, []string{fundedAddress}, fundedAddress,
-			subnetID, nodeID, validatorWeight,
+			userPass, []ids.ShortID{fundedAddress}, fundedAddress,
+			rSubnetID, nodeID, validatorWeight,
 			uint64(time.Now().Add(validatorStartDiff).Unix()),
 			uint64(time.Now().Add(validatorEndDiff).Unix()),
 		)
@@ -114,7 +134,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			txStatus, _ := client.GetTxStatus(ctx, txID, true)
+			txStatus, _ := client.GetTxStatus(ctx, txID)
 			if txStatus.Status == status.Committed {
 				break
 			}
@@ -130,7 +150,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		return fmt.Errorf("could not read genesis file (%s): %w", vmGenesis, err)
 	}
 	txID, err := client.CreateBlockchain(ctx,
-		userPass, []string{fundedAddress}, fundedAddress, rSubnetID,
+		userPass, []ids.ShortID{fundedAddress}, fundedAddress, rSubnetID,
 		vmID.String(), []string{}, constants.VMName, genesis,
 	)
 	if err != nil {
@@ -140,7 +160,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		txStatus, _ := client.GetTxStatus(ctx, txID, true)
+		txStatus, _ := client.GetTxStatus(ctx, txID)
 		if txStatus.Status == status.Committed {
 			break
 		}

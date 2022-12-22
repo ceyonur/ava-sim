@@ -79,7 +79,9 @@ func main() {
 	case <-bootstrapped:
 		if len(vm) > 0 && gctx.Err() == nil {
 			g.Go(func() error {
-				return runner.SetupSubnet(gctx, vmID, vmGenesis)
+				err := runner.SetupSubnet(gctx, vmID, vmGenesis)
+				fmt.Println(err)
+				return err
 			})
 		}
 	case <-gctx.Done():
