@@ -17,7 +17,7 @@ func createNodeConfig(pluginDir string, args []string) (node.Config, error) {
 		return node.Config{}, err
 	}
 
-	return config.GetNodeConfig(v, pluginDir)
+	return config.GetNodeConfig(v)
 }
 
 // Flags represents available CLI flags when starting a node
@@ -294,7 +294,6 @@ func flagsToArgs(flags Flags) []string {
 		"--router-health-max-outstanding-requests=" + strconv.Itoa(flags.RouterHealthMaxOutstandingRequestsKey),
 		fmt.Sprintf("--router-health-max-drop-rate=%f", flags.RouterHealthMaxDropRateKey),
 		"--index-enabled=" + strconv.FormatBool(flags.IndexEnabled),
-		"--plugin-mode-enabled=" + strconv.FormatBool(flags.PluginModeEnabled),
 	}
 	args = removeEmptyFlags(args)
 

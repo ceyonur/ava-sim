@@ -15,7 +15,7 @@ import (
 	"github.com/ava-labs/avalanchego/api/keystore"
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/utils/cb58"
-	"github.com/ava-labs/avalanchego/utils/crypto"
+	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
 	"github.com/ava-labs/avalanchego/vms/platformvm"
 	"github.com/ava-labs/avalanchego/vms/platformvm/status"
 	"github.com/fatih/color"
@@ -58,14 +58,13 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		return err
 	}
 
-	factory := crypto.FactorySECP256K1R{}
+	factory := secp256k1.Factory{}
 
-	ewoqIntf, err := factory.ToPrivateKey(ewoqBytes)
+	EWOQKey, err := factory.ToPrivateKey(ewoqBytes)
 	if err != nil {
 		return err
 	}
 
-	EWOQKey := ewoqIntf.(*crypto.PrivateKeySECP256K1R)
 	fundedAddress, err := client.ImportKey(ctx, userPass, EWOQKey)
 	if err != nil {
 		return fmt.Errorf("unable to import genesis key: %w", err)
