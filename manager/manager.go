@@ -12,7 +12,7 @@ import (
 	"github.com/ava-labs/ava-sim/utils"
 
 	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/app/process"
+	"github.com/ava-labs/avalanchego/app"
 	"github.com/ava-labs/avalanchego/ids"
 	"github.com/ava-labs/avalanchego/node"
 	"github.com/fatih/color"
@@ -211,7 +211,10 @@ func checkBootstrapped(ctx context.Context, bootstrapped chan struct{}) error {
 }
 
 func runApp(g *errgroup.Group, ctx context.Context, nodeNum int, config node.Config) error {
-	app := process.NewApp(config)
+	app, err := app.New(config)
+	if err != nil {
+		return fmt.Errorf("node%d failed to start: %w", nodeNum+1, err)
+	}
 
 	// Start running the AvalancheGo application
 	if err := app.Start(); err != nil {

@@ -10,14 +10,15 @@ import (
 	"github.com/ava-labs/ava-sim/constants"
 	"github.com/ava-labs/ava-sim/manager"
 
-	"github.com/ava-labs/avalanchego/api"
 	"github.com/ava-labs/avalanchego/api/info"
-	"github.com/ava-labs/avalanchego/api/keystore"
+	"github.com/ava-labs/avalanchego/genesis"
 	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/utils/cb58"
-	"github.com/ava-labs/avalanchego/utils/crypto/secp256k1"
 	"github.com/ava-labs/avalanchego/vms/platformvm"
 	"github.com/ava-labs/avalanchego/vms/platformvm/status"
+	"github.com/ava-labs/avalanchego/vms/platformvm/txs"
+	"github.com/ava-labs/avalanchego/vms/secp256k1fx"
+	wallet "github.com/ava-labs/avalanchego/wallet/subnet/primary"
+	"github.com/ava-labs/avalanchego/wallet/subnet/primary/common"
 	"github.com/fatih/color"
 )
 
@@ -28,7 +29,7 @@ const (
 
 	validatorWeight    = 50
 	validatorStartDiff = 30 * time.Second
-	validatorEndDiff   = 15 * 24 * time.Hour // 30 days
+	validatorEndDiff   = 15 * 24 * time.Hour
 )
 
 func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
@@ -36,53 +37,31 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	var (
 		nodeURLs = manager.NodeURLs()
 		nodeIDs  = manager.NodeIDs()
-
-		userPass = api.UserPass{
-			Username: "test",
-			Password: "vmsrkewl",
-		}
 	)
 	// Create user
-	kclient := keystore.NewClient(nodeURLs[0])
-	err := kclient.CreateUser(ctx, userPass)
-	if err != nil {
-		return fmt.Errorf("could not create user: %w", err)
+	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
+
+	// MakeWallet fetches the available UTXOs owned by [kc] on the network
+	// that [LocalAPIURI] is hosting.
+	wallet, err := wallet.MakeWallet(ctx, &wallet.WalletConfig{
+		URI:          nodeURLs[0],
+		AVAXKeychain: kc,
+		EthKeychain:  kc,
+	})
+
+	pWallet := wallet.P()
+
+	owner := &secp256k1fx.OutputOwners{
+		Threshold: 1,
+		Addrs: []ids.ShortID{
+			genesis.EWOQKey.PublicKey().Address(),
+		},
 	}
 
-	// Connect to local network
 	client := platformvm.NewClient(nodeURLs[0])
 
-	// Import genesis key
-	ewoqBytes, err := cb58.Decode(ewoqKey)
-	if err != nil {
-		return err
-	}
-
-	factory := secp256k1.Factory{}
-
-	EWOQKey, err := factory.ToPrivateKey(ewoqBytes)
-	if err != nil {
-		return err
-	}
-
-	fundedAddress, err := client.ImportKey(ctx, userPass, EWOQKey)
-	if err != nil {
-		return fmt.Errorf("unable to import genesis key: %w", err)
-	}
-	balance, err := client.GetBalance(ctx, []ids.ShortID{fundedAddress})
-	if err != nil {
-		return fmt.Errorf("unable to get genesis key balance: %w", err)
-	}
-	color.Cyan("found %d on address %s", balance, fundedAddress)
-
 	// Create a subnet
-	subnetIDTx, err := client.CreateSubnet(ctx,
-		userPass,
-		[]ids.ShortID{fundedAddress},
-		fundedAddress,
-		[]ids.ShortID{fundedAddress},
-		1,
-	)
+	subnetIDTx, err := pWallet.IssueCreateSubnetTx(owner)
 	if err != nil {
 		return fmt.Errorf("unable to create subnet: %w", err)
 	}
@@ -91,7 +70,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		txStatus, _ := client.GetTxStatus(ctx, subnetIDTx)
+		txStatus, _ := client.GetTxStatus(ctx, subnetIDTx.TxID)
 		if txStatus.Status == status.Committed {
 			break
 		}
@@ -119,11 +98,17 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 			return err
 		}
 
-		txID, err := client.AddSubnetValidator(ctx,
-			userPass, []ids.ShortID{fundedAddress}, fundedAddress,
-			rSubnetID, nodeID, validatorWeight,
-			uint64(time.Now().Add(validatorStartDiff).Unix()),
-			uint64(time.Now().Add(validatorEndDiff).Unix()),
+		tx, err := pWallet.IssueAddSubnetValidatorTx(
+			&txs.SubnetValidator{
+				Validator: txs.Validator{
+					NodeID: nodeID,
+					Start:  uint64(time.Now().Add(validatorStartDiff).Unix()),
+					End:    uint64(time.Now().Add(validatorEndDiff).Unix()),
+					Wght:   validatorWeight,
+				},
+				Subnet: rSubnetID,
+			},
+			common.WithContext(ctx),
 		)
 		if err != nil {
 			return fmt.Errorf("unable to add subnet validator: %w", err)
@@ -133,14 +118,14 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 			if ctx.Err() != nil {
 				return ctx.Err()
 			}
-			txStatus, _ := client.GetTxStatus(ctx, txID)
+			txStatus, _ := client.GetTxStatus(ctx, tx.TxID)
 			if txStatus.Status == status.Committed {
 				break
 			}
-			color.Yellow("waiting for add subnet validator (%s) tx (%s) to be accepted", nodeID, txID)
+			color.Yellow("waiting for add subnet validator (%s) tx (%s) to be accepted", nodeID, tx.TxID)
 			time.Sleep(waitTime)
 		}
-		color.Cyan("add subnet validator (%s) tx (%s) accepted", nodeID, txID)
+		color.Cyan("add subnet validator (%s) tx (%s) accepted", nodeID, tx.TxID)
 	}
 
 	// Create blockchain
@@ -148,9 +133,13 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	if err != nil {
 		return fmt.Errorf("could not read genesis file (%s): %w", vmGenesis, err)
 	}
-	txID, err := client.CreateBlockchain(ctx,
-		userPass, []ids.ShortID{fundedAddress}, fundedAddress, rSubnetID,
-		vmID.String(), []string{}, constants.VMName, genesis,
+
+	createTx, err := pWallet.IssueCreateChainTx(
+		rSubnetID,
+		genesis,
+		vmID,
+		nil,
+		constants.VMName,
 	)
 	if err != nil {
 		return fmt.Errorf("could not create blockchain: %w", err)
@@ -159,14 +148,14 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		txStatus, _ := client.GetTxStatus(ctx, txID)
+		txStatus, _ := client.GetTxStatus(ctx, createTx.TxID)
 		if txStatus.Status == status.Committed {
 			break
 		}
-		color.Yellow("waiting for create blockchain tx (%s) to be accepted", txID)
+		color.Yellow("waiting for create blockchain tx (%s) to be accepted", createTx.TxID)
 		time.Sleep(waitTime)
 	}
-	color.Cyan("create blockchain tx (%s) accepted", txID)
+	color.Cyan("create blockchain tx (%s) accepted", createTx.TxID)
 
 	// Validate blockchain exists
 	blockchains, err := client.GetBlockchains(ctx)

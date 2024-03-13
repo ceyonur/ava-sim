@@ -38,7 +38,6 @@ type Flags struct {
 
 	// APIs
 	APIAdminEnabled    bool
-	APIIPCsEnabled     bool
 	APIKeystoreEnabled bool
 	APIMetricsEnabled  bool
 	APIHealthEnabled   bool
@@ -77,7 +76,6 @@ type Flags struct {
 	StakingTLSCertFile    string
 
 	// Auth
-	APIAuthRequired        bool
 	APIAuthPasswordFileKey string
 	MinStakeDuration       string
 
@@ -90,7 +88,6 @@ type Flags struct {
 
 	// IPCS
 	IPCSChainIDs string
-	IPCSPath     string
 
 	// File Descriptor Limit
 	FDLimit int
@@ -120,9 +117,6 @@ type Flags struct {
 	// Uptime Requirement
 	UptimeRequirement float64
 
-	// Retry
-	RetryBootstrap bool
-
 	// Health
 	HealthCheckAveragerHalflifeKey string
 	HealthCheckFreqKey             string
@@ -146,7 +140,6 @@ func defaultFlags() Flags {
 		DynamicPublicIP:                         "",
 		NetworkID:                               "local",
 		APIAdminEnabled:                         true,
-		APIIPCsEnabled:                          true,
 		APIKeystoreEnabled:                      true,
 		APIMetricsEnabled:                       true,
 		HTTPHost:                                "127.0.0.1",
@@ -180,7 +173,6 @@ func defaultFlags() Flags {
 		StakingDisabledWeight:                   1,
 		StakingTLSKeyFile:                       "",
 		StakingTLSCertFile:                      "",
-		APIAuthRequired:                         false,
 		APIAuthPasswordFileKey:                  "",
 		MinStakeDuration:                        "336h",
 		APIHealthEnabled:                        true,
@@ -188,14 +180,12 @@ func defaultFlags() Flags {
 		WhitelistedSubnets:                      "",
 		APIInfoEnabled:                          true,
 		IPCSChainIDs:                            "",
-		IPCSPath:                                "/tmp",
 		FDLimit:                                 32768,
 		BenchlistDuration:                       "1h",
 		BenchlistFailThreshold:                  10,
 		BenchlistMinFailingDuration:             "5m",
 		BenchlistPeerSummaryEnabled:             false,
 		UptimeRequirement:                       0.6,
-		RetryBootstrap:                          true,
 		HealthCheckAveragerHalflifeKey:          "10s",
 		HealthCheckFreqKey:                      "30s",
 		RouterHealthMaxOutstandingRequestsKey:   1024,
@@ -242,7 +232,6 @@ func flagsToArgs(flags Flags) []string {
 		"--dynamic-public-ip=" + flags.DynamicPublicIP,
 		"--network-id=" + flags.NetworkID,
 		"--api-admin-enabled=" + strconv.FormatBool(flags.APIAdminEnabled),
-		"--api-ipcs-enabled=" + strconv.FormatBool(flags.APIIPCsEnabled),
 		"--api-keystore-enabled=" + strconv.FormatBool(flags.APIKeystoreEnabled),
 		"--api-metrics-enabled=" + strconv.FormatBool(flags.APIMetricsEnabled),
 		"--http-host=" + flags.HTTPHost,
@@ -269,26 +258,23 @@ func flagsToArgs(flags Flags) []string {
 		"--network-health-min-conn-peers=" + strconv.Itoa(flags.NetworkHealthMinConnPeers),
 		"--network-timeout-coefficient=" + strconv.Itoa(flags.NetworkTimeoutCoefficient),
 		"--network-timeout-halflife=" + flags.NetworkTimeoutHalflife,
-		"--staking-enabled=" + strconv.FormatBool(flags.StakingEnabled),
+		"--sybil-protection-enabled=" + strconv.FormatBool(flags.StakingEnabled),
 		"--staking-port=" + stakingPortString,
-		"--staking-disabled-weight=" + strconv.Itoa(flags.StakingDisabledWeight),
+		"--sybil-protection-disabled-weight=" + strconv.Itoa(flags.StakingDisabledWeight),
 		"--staking-tls-key-file=" + stakerKeyFile,
 		"--staking-tls-cert-file=" + stakerCertFile,
-		"--api-auth-required=" + strconv.FormatBool(flags.APIAuthRequired),
 		"--api-auth-password-file=" + flags.APIAuthPasswordFileKey,
 		"--min-stake-duration=" + flags.MinStakeDuration,
-		"--whitelisted-subnets=" + flags.WhitelistedSubnets,
+		"--track-subnets=" + flags.WhitelistedSubnets,
 		"--api-health-enabled=" + strconv.FormatBool(flags.APIHealthEnabled),
 		"--config-file=" + flags.ConfigFile,
 		"--chain-config-dir=" + flags.ChainConfigDir,
 		"--api-info-enabled=" + strconv.FormatBool(flags.APIInfoEnabled),
 		"--ipcs-chain-ids=" + flags.IPCSChainIDs,
-		"--ipcs-path=" + flags.IPCSPath,
 		"--benchlist-duration=" + flags.BenchlistDuration,
 		"--benchlist-fail-threshold=" + strconv.Itoa(flags.BenchlistFailThreshold),
 		"--benchlist-min-failing-duration=" + flags.BenchlistMinFailingDuration,
 		fmt.Sprintf("--uptime-requirement=%f", flags.UptimeRequirement),
-		"--bootstrap-retry-enabled=" + strconv.FormatBool(flags.RetryBootstrap),
 		"--health-check-averager-halflife=" + flags.HealthCheckAveragerHalflifeKey,
 		"--health-check-frequency=" + flags.HealthCheckFreqKey,
 		"--router-health-max-outstanding-requests=" + strconv.Itoa(flags.RouterHealthMaxOutstandingRequestsKey),
