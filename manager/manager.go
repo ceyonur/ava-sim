@@ -31,29 +31,40 @@ var (
 	keys1StakerCrt []byte
 	//go:embed certs/keys1/staker.key
 	keys1StakerKey []byte
+	//go:embed certs/keys1/signer.key
+	keys1SignerKey []byte
 
 	//go:embed certs/keys2/staker.crt
 	keys2StakerCrt []byte
 	//go:embed certs/keys2/staker.key
 	keys2StakerKey []byte
+	//go:embed certs/keys2/signer.key
+	keys2SignerKey []byte
 
 	//go:embed certs/keys3/staker.crt
 	keys3StakerCrt []byte
 	//go:embed certs/keys3/staker.key
 	keys3StakerKey []byte
+	//go:embed certs/keys3/signer.key
+	keys3SignerKey []byte
 
 	//go:embed certs/keys4/staker.crt
 	keys4StakerCrt []byte
 	//go:embed certs/keys4/staker.key
 	keys4StakerKey []byte
+	//go:embed certs/keys4/signer.key
+	keys4SignerKey []byte
 
 	//go:embed certs/keys5/staker.crt
 	keys5StakerCrt []byte
 	//go:embed certs/keys5/staker.key
 	keys5StakerKey []byte
+	//go:embed certs/keys5/signer.key
+	keys5SignerKey []byte
 
-	nodeCerts = [][]byte{keys1StakerCrt, keys2StakerCrt, keys3StakerCrt, keys4StakerCrt, keys5StakerCrt}
-	nodeKeys  = [][]byte{keys1StakerKey, keys2StakerKey, keys3StakerKey, keys4StakerKey, keys5StakerKey}
+	nodeCerts      = [][]byte{keys1StakerCrt, keys2StakerCrt, keys3StakerCrt, keys4StakerCrt, keys5StakerCrt}
+	nodeKeys       = [][]byte{keys1StakerKey, keys2StakerKey, keys3StakerKey, keys4StakerKey, keys5StakerKey}
+	nodeSignerKeys = [][]byte{keys1SignerKey, keys2SignerKey, keys3SignerKey, keys4SignerKey, keys5SignerKey}
 )
 
 func NodeIDs() []string {
@@ -113,6 +124,10 @@ func StartNetwork(ctx context.Context, vmPath string, vmID ids.ID, bootstrapped 
 		if err := ioutil.WriteFile(keyFile, nodeKeys[i], os.FileMode(constants.FilePerms)); err != nil {
 			panic(err)
 		}
+		signerFile := fmt.Sprintf("%s/signer.key", nodeDir)
+		if err := ioutil.WriteFile(signerFile, nodeSignerKeys[i], os.FileMode(constants.FilePerms)); err != nil {
+			panic(err)
+		}
 
 		df := defaultFlags()
 		df.LogLevel = "info"
@@ -134,6 +149,7 @@ func StartNetwork(ctx context.Context, vmPath string, vmID ids.ID, bootstrapped 
 		}
 		df.StakingTLSCertFile = certFile
 		df.StakingTLSKeyFile = keyFile
+		df.StakingSignerKeyFile = signerFile
 
 		nodeConfig, err := createNodeConfig(pluginsDir, flagsToArgs(df))
 		if err != nil {

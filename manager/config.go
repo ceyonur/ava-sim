@@ -74,6 +74,7 @@ type Flags struct {
 	StakingDisabledWeight int
 	StakingTLSKeyFile     string
 	StakingTLSCertFile    string
+	StakingSignerKeyFile  string
 
 	// Auth
 	APIAuthPasswordFileKey string
@@ -223,62 +224,38 @@ func flagsToArgs(flags Flags) []string {
 	if stakerKeyFile != "" && string(stakerKeyFile[0]) != "/" {
 		stakerKeyFile = fmt.Sprintf("%s/%s", wd, stakerKeyFile)
 	}
-	fmt.Println(stakerKeyFile, stakerCertFile)
+
+	stakerSignerKeyFile := flags.StakingSignerKeyFile
+	if stakerSignerKeyFile != "" && string(stakerSignerKeyFile[0]) != "/" {
+		stakerSignerKeyFile = fmt.Sprintf("%s/%s", wd, stakerSignerKeyFile)
+	}
 
 	args := []string{
-		"--version=" + strconv.FormatBool(flags.Version),
-		"--tx-fee=" + strconv.FormatUint(uint64(flags.TxFee), 10),
 		"--public-ip=" + flags.PublicIP,
-		"--dynamic-public-ip=" + flags.DynamicPublicIP,
 		"--network-id=" + flags.NetworkID,
 		"--api-admin-enabled=" + strconv.FormatBool(flags.APIAdminEnabled),
 		"--api-keystore-enabled=" + strconv.FormatBool(flags.APIKeystoreEnabled),
 		"--api-metrics-enabled=" + strconv.FormatBool(flags.APIMetricsEnabled),
 		"--http-host=" + flags.HTTPHost,
+		"--staking-signer-key-file=" + flags.StakingSignerKeyFile,
 		"--http-port=" + httpPortString,
-		"--http-tls-enabled=" + strconv.FormatBool(flags.HTTPTLSEnabled),
 		"--http-tls-cert-file=" + httpCertFile,
 		"--http-tls-key-file=" + httpKeyFile,
 		"--bootstrap-ips=" + flags.BootstrapIPs,
 		"--bootstrap-ids=" + flags.BootstrapIDs,
-		"--bootstrap-beacon-connection-timeout=" + flags.BootstrapBeaconConnectionTimeout,
 		"--db-dir=" + flags.DBDir,
 		"--build-dir=" + flags.BuildDir,
 		"--log-level=" + flags.LogLevel,
 		"--log-dir=" + flags.LogDir,
 		"--log-display-level=" + flags.LogDisplayLevel,
-		"--stake-minting-period=" + flags.StakeMintingPeriod,
-		"--network-initial-timeout=" + flags.NetworkInitialTimeout,
-		"--network-minimum-timeout=" + flags.NetworkMinimumTimeout,
-		"--network-maximum-timeout=" + flags.NetworkMaximumTimeout,
-		fmt.Sprintf("--network-health-max-send-fail-rate=%f", flags.NetworkHealthMaxSendFailRateKey),
-		fmt.Sprintf("--network-health-max-portion-send-queue-full=%f", flags.NetworkHealthMaxPortionSendQueueFillKey),
-		"--network-health-max-time-since-msg-sent=" + flags.NetworkHealthMaxTimeSinceMsgSentKey,
-		"--network-health-max-time-since-msg-received=" + flags.NetworkHealthMaxTimeSinceMsgReceivedKey,
-		"--network-health-min-conn-peers=" + strconv.Itoa(flags.NetworkHealthMinConnPeers),
-		"--network-timeout-coefficient=" + strconv.Itoa(flags.NetworkTimeoutCoefficient),
-		"--network-timeout-halflife=" + flags.NetworkTimeoutHalflife,
-		"--sybil-protection-enabled=" + strconv.FormatBool(flags.StakingEnabled),
 		"--staking-port=" + stakingPortString,
-		"--sybil-protection-disabled-weight=" + strconv.Itoa(flags.StakingDisabledWeight),
 		"--staking-tls-key-file=" + stakerKeyFile,
 		"--staking-tls-cert-file=" + stakerCertFile,
-		"--api-auth-password-file=" + flags.APIAuthPasswordFileKey,
-		"--min-stake-duration=" + flags.MinStakeDuration,
 		"--track-subnets=" + flags.WhitelistedSubnets,
 		"--api-health-enabled=" + strconv.FormatBool(flags.APIHealthEnabled),
 		"--config-file=" + flags.ConfigFile,
 		"--chain-config-dir=" + flags.ChainConfigDir,
 		"--api-info-enabled=" + strconv.FormatBool(flags.APIInfoEnabled),
-		"--ipcs-chain-ids=" + flags.IPCSChainIDs,
-		"--benchlist-duration=" + flags.BenchlistDuration,
-		"--benchlist-fail-threshold=" + strconv.Itoa(flags.BenchlistFailThreshold),
-		"--benchlist-min-failing-duration=" + flags.BenchlistMinFailingDuration,
-		fmt.Sprintf("--uptime-requirement=%f", flags.UptimeRequirement),
-		"--health-check-averager-halflife=" + flags.HealthCheckAveragerHalflifeKey,
-		"--health-check-frequency=" + flags.HealthCheckFreqKey,
-		"--router-health-max-outstanding-requests=" + strconv.Itoa(flags.RouterHealthMaxOutstandingRequestsKey),
-		fmt.Sprintf("--router-health-max-drop-rate=%f", flags.RouterHealthMaxDropRateKey),
 		"--index-enabled=" + strconv.FormatBool(flags.IndexEnabled),
 	}
 	args = removeEmptyFlags(args)

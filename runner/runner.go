@@ -27,7 +27,8 @@ const (
 	waitTime     = 1 * time.Second
 	longWaitTime = 10 * waitTime
 
-	validatorWeight    = 50
+	validatorWeight    = 20
+	validatorCount     = 5
 	validatorStartDiff = 30 * time.Second
 	validatorEndDiff   = 15 * 24 * time.Hour
 )
@@ -38,6 +39,8 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 		nodeURLs = manager.NodeURLs()
 		nodeIDs  = manager.NodeIDs()
 	)
+	nodeURLs = nodeURLs[:validatorCount]
+	nodeIDs = nodeIDs[:validatorCount]
 	// Create user
 	kc := secp256k1fx.NewKeychain(genesis.EWOQKey)
 
@@ -91,7 +94,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 	}
 
 	// Add all validators to subnet with equal weight
-	for _, nodeIDStr := range manager.NodeIDs() {
+	for _, nodeIDStr := range nodeIDs {
 		nodeID, err := ids.NodeIDFromString(nodeIDStr)
 		if err != nil {
 			fmt.Println(err)
