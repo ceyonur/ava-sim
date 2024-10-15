@@ -31,7 +31,7 @@ cd "$MAIN_PATH"
 go mod tidy
 
 # Exit build successfully if the binaries are created
-if [[ -f "$subnetevm_path" && -f "$timestampvm_path" ]]; then
+if [[ -f "$subnetevm_path" ]]; then
         echo "Build Successful"
         exit 0
 else
