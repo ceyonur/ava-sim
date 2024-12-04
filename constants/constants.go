@@ -6,7 +6,7 @@ import (
 
 const (
 	// DO NOT CHANGE VALUES IN THIS FILE
-	WhitelistedSubnets = "29uVeLPJB1eQJkzRemU8g8wZDw5uJRqpab5U2mX9euieVwiEbL"
+	WhitelistedSubnets = "BKBZ6xXTnT86B4L5fp8rvtcmNSpvtNz8En9jG61ywV2uWyeHy"
 
 	VMName = "kewl vm"
 

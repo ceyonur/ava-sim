@@ -15,6 +15,7 @@
     },
     "contractDeployerAllowListConfig": {
       "adminAddresses": [
+        "0x277280e8337E64a3A8E8b795D4E8E5e00BF6e203",
         "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"
       ],
       "blockTimestamp": 0

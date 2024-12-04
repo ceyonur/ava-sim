@@ -46,11 +46,7 @@ func SetupSubnet(ctx context.Context, vmID ids.ID, vmGenesis string) error {
 
 	// MakeWallet fetches the available UTXOs owned by [kc] on the network
 	// that [LocalAPIURI] is hosting.
-	wallet, err := wallet.MakeWallet(ctx, &wallet.WalletConfig{
-		URI:          nodeURLs[0],
-		AVAXKeychain: kc,
-		EthKeychain:  kc,
-	})
+	wallet, err := wallet.MakeWallet(ctx, nodeURLs[0], kc, kc, wallet.WalletConfig{})
 
 	pWallet := wallet.P()
 

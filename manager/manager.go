@@ -156,6 +156,7 @@ func StartNetwork(ctx context.Context, vmPath string, vmID ids.ID, bootstrapped 
 			panic(err)
 		}
 		nodeConfig.PluginDir = pluginsDir
+		nodeConfig.ChainDataDir = fmt.Sprintf("%s/chaindata", nodeDir)
 		nodeConfigs[i] = nodeConfig
 	}
 
@@ -204,7 +205,7 @@ func checkBootstrapped(ctx context.Context, bootstrapped chan struct{}) error {
 				time.Sleep(waitDiff)
 				continue
 			}
-			if peers, _ := client.Peers(ctx); len(peers) < constants.NumNodes-1 {
+			if peers, _ := client.Peers(ctx, nil); len(peers) < constants.NumNodes-1 {
 				color.Yellow("waiting for %s to connect to all peers (%d/%d)", nodeIDs[i], len(peers), constants.NumNodes-1)
 				time.Sleep(waitDiff)
 				continue

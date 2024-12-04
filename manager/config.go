@@ -59,7 +59,8 @@ type Flags struct {
 	BuildDir string
 
 	// DB
-	DBDir string
+	DBDir  string
+	DBType string
 
 	// Logging
 	LogLevel            string
@@ -189,6 +190,7 @@ func defaultFlags() Flags {
 		UptimeRequirement:                       0.6,
 		HealthCheckAveragerHalflifeKey:          "10s",
 		HealthCheckFreqKey:                      "30s",
+		DBType:                                  "memdb",
 		RouterHealthMaxOutstandingRequestsKey:   1024,
 		RouterHealthMaxDropRateKey:              1,
 		IndexEnabled:                            true,
@@ -257,6 +259,7 @@ func flagsToArgs(flags Flags) []string {
 		"--chain-config-dir=" + flags.ChainConfigDir,
 		"--api-info-enabled=" + strconv.FormatBool(flags.APIInfoEnabled),
 		"--index-enabled=" + strconv.FormatBool(flags.IndexEnabled),
+		"--db-type=" + flags.DBType,
 	}
 	args = removeEmptyFlags(args)
 
