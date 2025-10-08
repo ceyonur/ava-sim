@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/ava-labs/avalanchego/config"
-	"github.com/ava-labs/avalanchego/node"
+	"github.com/ava-labs/avalanchego/config/node"
 )
 
 func createNodeConfig(pluginDir string, args []string) (node.Config, error) {
@@ -37,11 +37,10 @@ type Flags struct {
 	NetworkID string
 
 	// APIs
-	APIAdminEnabled    bool
-	APIKeystoreEnabled bool
-	APIMetricsEnabled  bool
-	APIHealthEnabled   bool
-	APIInfoEnabled     bool
+	APIAdminEnabled   bool
+	APIMetricsEnabled bool
+	APIHealthEnabled  bool
+	APIInfoEnabled    bool
 
 	// HTTP
 	HTTPHost        string
@@ -142,7 +141,6 @@ func defaultFlags() Flags {
 		DynamicPublicIP:                         "",
 		NetworkID:                               "local",
 		APIAdminEnabled:                         true,
-		APIKeystoreEnabled:                      true,
 		APIMetricsEnabled:                       true,
 		HTTPHost:                                "127.0.0.1",
 		HTTPPort:                                9650,
@@ -236,7 +234,6 @@ func flagsToArgs(flags Flags) []string {
 		"--public-ip=" + flags.PublicIP,
 		"--network-id=" + flags.NetworkID,
 		"--api-admin-enabled=" + strconv.FormatBool(flags.APIAdminEnabled),
-		"--api-keystore-enabled=" + strconv.FormatBool(flags.APIKeystoreEnabled),
 		"--api-metrics-enabled=" + strconv.FormatBool(flags.APIMetricsEnabled),
 		"--http-host=" + flags.HTTPHost,
 		"--staking-signer-key-file=" + flags.StakingSignerKeyFile,

@@ -13,8 +13,8 @@ import (
 
 	"github.com/ava-labs/avalanchego/api/info"
 	"github.com/ava-labs/avalanchego/app"
+	"github.com/ava-labs/avalanchego/config/node"
 	"github.com/ava-labs/avalanchego/ids"
-	"github.com/ava-labs/avalanchego/node"
 	"github.com/fatih/color"
 	"golang.org/x/sync/errgroup"
 )
@@ -234,17 +234,14 @@ func runApp(g *errgroup.Group, ctx context.Context, nodeNum int, config node.Con
 	}
 
 	// Start running the AvalancheGo application
-	if err := app.Start(); err != nil {
-		return fmt.Errorf("node%d failed to start: %w", nodeNum+1, err)
-	}
-
+	app.Start()
 	g.Go(func() error {
 		<-ctx.Done()
-		_ = app.Stop()
+		app.Stop()
 		return ctx.Err()
 	})
 
-	exitCode, err := app.ExitCode()
+	exitCode := app.ExitCode()
 	if (exitCode > 0 || err != nil) && ctx.Err() == nil {
 		color.Red("node%d exited with code %d: %v", nodeNum+1, exitCode, err)
 	}
