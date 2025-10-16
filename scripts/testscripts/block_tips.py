@@ -125,8 +125,8 @@ def compute_block_stats(rpc, block):
         estimated_tip_wei = total_required_tips // total_gas_used
 
     return {
-        "blockNumber": block["number"],
-        "blockHash": block["hash"],
+        "blockNumber": hex_to_int(block["number"]),
+        "blockHash": block["hash"].lower(),
         "txCount": n,
         "baseFeeGwei": wei_to_gwei_str(base_fee),
         "blockGasCost": block_gas_cost,
