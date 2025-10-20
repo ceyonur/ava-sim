@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Requirements: curl, jq
-URL="${URL:-https://granite.avax-dev.network:443/ext/bc/C/rpc}"
+URL="${URL:-http://localhost:9660/ext/bc/2E1DARbp2qKqQ4tjUinZcr77thbGcM5K1VxXmTA45sHFezk3mj/rpc}"
 HDR="Content-Type: application/json"
 
 # Configurable via env or flags:
@@ -80,6 +80,7 @@ while :; do
   tms_hex="$(extract_field "$j" "timestampMilliseconds")"
   blockgascost_hex="$(extract_field "$j" "blockGasCost")"
   mindelayexcess_hex="$(extract_field "$j" "minDelayExcess")"
+  basefeepergas_hex="$(extract_field "$j" "baseFeePerGas")"
 
   # Convert to decimal (empty -> print as missing)
   ts_dec=""; tms_dec=""
@@ -87,8 +88,10 @@ while :; do
   [[ -n "$tms_hex" ]] && tms_dec="$(hex2dec "$tms_hex")" || true
   [[ -n "$blockgascost_hex" ]] && blockgascost_dec="$(hex2dec "$blockgascost_hex")" || true
   [[ -n "$mindelayexcess_hex" ]] && mindelayexcess_dec="$(hex2dec "$mindelayexcess_hex")" || true
+  [[ -n "$basefeepergas_hex" ]] && basefee_wei_dec="$(hex2dec "$basefeepergas_hex")" || true
   # Print current
   echo "Block ${block_hex}:"
+  echo "  baseFeePerGas          (dec): ${basefee_wei_dec:-<missing>}"
   echo "  timestamp              (dec): ${ts_dec:-<missing>}"
   echo "  timestampMilliseconds  (dec): ${tms_dec:-<missing>}"
   echo "  blockGasCost           (dec): ${blockgascost_dec:-<missing>}"
