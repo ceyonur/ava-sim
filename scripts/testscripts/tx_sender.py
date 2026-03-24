@@ -3,10 +3,10 @@ import time
 import threading
 
 # CONFIGURATION
-RPC_URL = "http://localhost:9660/ext/bc/2E1DARbp2qKqQ4tjUinZcr77thbGcM5K1VxXmTA45sHFezk3mj/rpc"
-PRIVATE_KEY = "0248bc176e066e917ea1da4afb0199d68c3f4ae27e236cadb6decfc7c8b9e9ac"
-TO_ADDRESS = "0x8db97C7cEcE249c2b98bDC0226Cc4C2A57BF52FC"
-TPS = 100  # transactions per second
+RPC_URL = "http://127.0.0.1:9660/ext/bc/98qnjenm7MBd8G2cPZoRvZrgJC33JGSAAKghsQ6eojbLCeRNp/rpc"
+PRIVATE_KEY = "342056fab2ae8fa8fe52a80065a50e7338504306f0a204056e3bf2d58ca9fdb6"
+TO_ADDRESS = "0xDA5c46764f0005F2185a2066B168922dDaE58B37"
+TPS = 1  # transactions per second
 AMOUNT_AVAX = 0 # per transaction
 
 # Setup web3
@@ -24,7 +24,7 @@ def send_tx(nonce):
             "gas": 21000,
             # use only base fee
             "maxPriorityFeePerGas": 0,
-            "maxFeePerGas": 10000,
+            "maxFeePerGas": 36000000000,
             "nonce": nonce,
             "chainId": w3.eth.chain_id,
         }

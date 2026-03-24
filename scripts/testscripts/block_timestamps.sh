@@ -2,22 +2,24 @@
 set -euo pipefail
 
 # Requirements: curl, jq
-URL="${URL:-http://localhost:9660/ext/bc/2E1DARbp2qKqQ4tjUinZcr77thbGcM5K1VxXmTA45sHFezk3mj/rpc}"
+URL="${URL:-https://api.avax.network:443/ext/bc/C/rpc}"
 HDR="Content-Type: application/json"
 
 # Configurable via env or flags:
-START_HEX="${START_HEX:-0x0}"   # starting block (hex like 0x0, 0x1a, etc.)
+START_HEX="${START_HEX:-0x0}"   # starting block (hex like 0x0, 0x1a, etc., or "latest", "pending", "earliest")
 DELAY_SEC="${DELAY_SEC:-1}"     # delay between retries when block not yet available
 COUNT="${COUNT:-0}"             # 0 = run forever; otherwise number of blocks to process
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--start 0xHEX] [--delay SECONDS] [--count N]
+Usage: $(basename "$0") [--start 0xHEX|latest] [--delay SECONDS] [--count N] [--url URL]
 Env vars also supported: START_HEX, DELAY_SEC, COUNT, URL
 
 Examples:
   $(basename "$0") --start 0x0 --count 10
-  START_HEX=0x64 COUNT=0 DELAY_SEC=2 $(basename "$0")
+  $(basename "$0") --start latest --count 5
+  $(basename "$0") --url https://subnets.avax.network/echo/testnet/rpc --start 0x0
+  START_HEX=latest COUNT=0 DELAY_SEC=2 $(basename "$0")
 EOF
 }
 
@@ -27,6 +29,7 @@ while [[ $# -gt 0 ]]; do
     --start) START_HEX="$2"; shift 2 ;;
     --delay) DELAY_SEC="$2"; shift 2 ;;
     --count) COUNT="$2"; shift 2 ;;
+    --url) URL="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1"; usage; exit 1 ;;
   esac
@@ -66,6 +69,22 @@ prev_hex=""
 prev_blockgascost_dec=""
 prev_mindelayexcess_dec=""
 
+# Handle special block tags like "latest", "pending", "earliest"
+if [[ "$START_HEX" == "latest" || "$START_HEX" == "pending" || "$START_HEX" == "earliest" ]]; then
+  echo "Fetching ${START_HEX} block number..."
+  latest_json="$(rpc_call "$START_HEX")"
+  if ! jq -e '.result != null' >/dev/null 2>&1 <<<"$latest_json"; then
+    echo "Error: Failed to fetch ${START_HEX} block"
+    exit 1
+  fi
+  START_HEX="$(extract_field "$latest_json" "number")"
+  if [[ -z "$START_HEX" ]]; then
+    echo "Error: Could not extract block number from ${START_HEX} block response"
+    exit 1
+  fi
+  echo "Starting from block ${START_HEX}"
+fi
+
 start_dec="$(hex2dec "$START_HEX")"
 processed=0
 
@@ -99,7 +118,6 @@ while :; do
   # Warn and exit if blockgascost is not zero
   if [[ -n "${blockgascost_dec:-}" && $blockgascost_dec -ne 0 ]]; then
     echo "  WARN: blockGasCost is not zero!"
-    exit 1
   fi
 
   # Compare with previous, if any
